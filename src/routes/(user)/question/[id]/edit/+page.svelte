@@ -4,12 +4,16 @@
     import {alertError, alertSuccess} from "$lib/alert.js";
     import {onMount} from "svelte";
     import {page} from "$app/state";
-    import {qtype} from "$lib/models/Qtype.js";
+    import {getQuestionTypes, getQuestionTypeDisplayName} from "$lib/enums/question-types.js";
+    import {getAnswerPolicy, getAnswerPolicyDisplayName} from "$lib/enums/answer-policy.js";
+    import {getLabel} from "$lib/enums/label.js";
 
     const {id} = page.params;
     let question = $state({...new QuestionModel()});
+    const types = getQuestionTypes();
+    const policies = getAnswerPolicy();
 
-    async function questionAdd(e) {
+    async function questionUpdate(e) {
         e.preventDefault();
 
         const response = await questionPatch(question);
@@ -39,9 +43,9 @@
 </script>
 
 <section class="p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
-    <h2 class="text-2xl font-bold mb-6 text-gray-900 dark:text-white">Question Add</h2>
+    <h2 class="text-2xl font-bold mb-6 text-gray-900 dark:text-white">Question Edit</h2>
 
-    <form onsubmit={questionAdd}>
+    <form onsubmit={questionUpdate}>
         <div class="mb-5">
             <label for="qtype" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Type</label>
             <select
@@ -50,22 +54,30 @@
                     class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                     required
             >
-                {#each qtype as department}
-                    <option value={department.id} selected={department.id === student.departmentId}>
-                        {department.name}
+                {#each types as type}
+                    <option value={type} selected={question.qtype === type}>
+                        {getQuestionTypeDisplayName(type)}
                     </option>
                 {/each}
             </select>
         </div>
-        <div class="mb-5">
-            <label for="answer-policy" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Answer Policy</label>
-            <input
-                    id="answer-policy"
-                    type="text"
-                    bind:value={question.questionAnswerPolicy}
-                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-            />
-        </div>
+        {#if question.qtype === types[0]}
+            <div class="mb-5">
+                <label for="answer-policy" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Answer Policy</label>
+                <select
+                        id="answer-policy"
+                        bind:value={question.questionAnswerPolicy}
+                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        required
+                >
+                    {#each policies as policy}
+                        <option value={policy} selected={question.questionAnswerPolicy === policy}>
+                            {getAnswerPolicyDisplayName(policy)}
+                        </option>
+                    {/each}
+                </select>
+            </div>
+        {/if}
         <div class="mb-5">
             <label for="stem" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Stem</label>
             <input
