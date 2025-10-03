@@ -19,29 +19,34 @@
     const booleans = getBooleanEnum();
 
     async function questionAdd() {
-        const response = await questionPost(question);
-        const responseBody = await response.json();
+        try {
+            question = await questionPost(question);
+        } catch (err) {
+            await alertError(err.message);
+        }
 
-        if (responseBody.status === 200) {
-            // questionOptions.forEach(({questionId}) => {
-            //     questionId = responseBody.data.id;
-            // });
+        if (question.qtype === types[0]) {
+            const qid = question.id;
+
+            // isi questionId untuk setiap option
+            questionOptions = questionOptions.map(opt => ({
+                ...opt,
+                questionId: question.id,
+            }));
             await alertSuccess("save question success");
         } else {
-            await alertError(responseBody.message);
+            await alertSuccess("save question success");
+            await goto('/question');
         }
     }
 
     async function questionOptionAdd() {
-        const response = await questionOptionListPost(questionOptions);
-        const responseBody = await response.json();
-        console.log(responseBody);
-
-        if (responseBody.status === 200) {
+        try {
+            questionOptions = await questionOptionListPost(questionOptions);
             await alertSuccess("save question option success");
             await goto("/question");
-        } else {
-            await alertError(responseBody.message);
+        } catch (err) {
+            await alertError(err.message);
         }
     }
 
@@ -63,7 +68,9 @@
     async function questionForm(event) {
         event.preventDefault();
         await questionAdd();
-        await questionOptionAdd();
+        if (question.qtype === types[0]) {
+            await questionOptionAdd();
+        }
     }
 </script>
 
@@ -123,26 +130,15 @@
                     class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
             />
         </div>
-        <div class="flex justify-end gap-3 mt-4">
-            <button type="submit"
-                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
-                <i class="fas fa-plus-circle mr-2"></i>Save
-            </button>
-            <a class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg"
-               href="/question">
-                Back
-            </a>
-        </div>
         {#if question.qtype === types[0]}
-            {#each questionOptions as questionOptions, i}
+            {#each questionOptions as questionOption, i}
                 <div class="w-full p-4 bg-white border border-gray-200 rounded-lg shadow-sm sm:p-8 dark:bg-gray-800 dark:border-gray-700 mt-5">
-                    <h5 class="text-2xl font-bold mb-6 text-gray-900 dark:text-white">MCO {questionOptions.label || i + 1}</h5>
+                    <h5 class="text-2xl font-bold mb-6 text-gray-900 dark:text-white">MCO {questionOption.label || i + 1}</h5>
                     <div class="mb-5">
-                        <input type="hidden" bind:value={questionOptions.questionId} name={question.id} id="questionId-{i}" />
                         <label for="label-{i}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Label</label>
                         <select
                                 id="label-{i}"
-                                bind:value={questionOptions.label}
+                                bind:value={questionOption.label}
                                 class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                                 required
                         >
@@ -159,7 +155,7 @@
                         <input
                                 id="content-{i}"
                                 type="text"
-                                bind:value={questionOptions.content}
+                                bind:value={questionOption.content}
                                 class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                         />
                     </div>
@@ -167,7 +163,7 @@
                         <label for="correct-{i}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Correct</label>
                         <select
                                 id="correct-{i}"
-                                bind:value={questionOptions.correct}
+                                bind:value={questionOption.correct}
                                 class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                         >
                             <option value="" disabled>select correct</option>
@@ -183,13 +179,13 @@
                         <input
                                 id="orderIndex-{i}"
                                 type="number"
-                                bind:value={questionOptions.orderIndex}
+                                bind:value={questionOption.orderIndex}
                                 class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                         />
                     </div>
                 </div>
             {/each}
-            <div class="flex gap-3 mt-4 justify-end">
+            <div class="flex gap-3 mt-4 justify-start">
                 <button
                         onclick={addOption}
                         type="button"
@@ -206,5 +202,15 @@
                 </button>
             </div>
         {/if}
+        <div class="flex justify-end gap-3 mt-4">
+            <button type="submit"
+                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
+                <i class="fas fa-plus-circle mr-2"></i>Save
+            </button>
+            <a class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg"
+               href="/question">
+                Back
+            </a>
+        </div>
     </form>
 </section>

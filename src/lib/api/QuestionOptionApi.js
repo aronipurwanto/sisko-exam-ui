@@ -1,61 +1,46 @@
 import {PUBLIC_SISKO_EXAM_API} from "$env/static/public"
+import {apiRequest} from "$lib/base/BaseApiRequest.js";
 
 export const questionOptionGetList = async () => {
-    return await fetch(`${PUBLIC_SISKO_EXAM_API}/question-option`, {
-        method: "GET",
-        headers: {
-            'Accept': 'application/json',
-        }
-    });
+    await apiRequest(`${PUBLIC_SISKO_EXAM_API}/question`);
 }
 
 export const questionOptionGet = async (id) => {
-    return await fetch(`${PUBLIC_SISKO_EXAM_API}/question-option/${id}`, {
-        method: "GET",
-        headers: {
-            'Accept': 'application/json',
-        }
-    });
+    await apiRequest(`${PUBLIC_SISKO_EXAM_API}/question/${id}`);
 }
 
 export const questionOptionPost = async (questionOption) => {
-    return await fetch(`${PUBLIC_SISKO_EXAM_API}/question-option`, {
+    return await apiRequest(`${PUBLIC_SISKO_EXAM_API}/question-option`, {
         method: "POST",
         headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
+            'Content-Type': 'application/json'
         },
         body: JSON.stringify(questionOption)
     });
 }
 
 export const questionOptionListPost = async (questionOption) => {
-    return await fetch(`${PUBLIC_SISKO_EXAM_API}/question-option/all`, {
+    return await apiRequest(`${PUBLIC_SISKO_EXAM_API}/question-option/all`, {
         method: "POST",
         headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
+            'Content-Type': 'application/json'
         },
         body: JSON.stringify(questionOption)
     });
 }
 
 export const questionOptionPatch = async (questionOption) => {
-    return await fetch(`${PUBLIC_SISKO_EXAM_API}/question-option/${questionOption.id}`, {
+    return await apiRequest(`${PUBLIC_SISKO_EXAM_API}/question-option/${questionOption.id}`, {
         method: "PATCH",
         headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
+            'Content-Type': 'application/json'
         },
         body: JSON.stringify(questionOption)
     });
 }
 
 export const questionOptionDelete = async (id) => {
-    return await fetch(`${PUBLIC_SISKO_EXAM_API}/question-option/${id}`, {
-        method: "DELETE",
-        headers: {
-            'Accept': 'application/json',
-        }
+    return await apiRequest(`${PUBLIC_SISKO_EXAM_API}/question-option/${id}`, {
+        method: "DELETE"
     });
 }

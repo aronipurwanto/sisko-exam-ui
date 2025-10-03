@@ -6,33 +6,28 @@
     let questions = $state([]);
 
     async function questionList() {
-        const response = await questionGetList();
-        const responseBody = await response.json();
-
-        if (responseBody.status === 200) {
-            questions = responseBody.data;
-        } else {
-            await alertError(responseBody.message);
+        try {
+            questions = await questionGetList();
+        } catch (err) {
+            await alertError(err.message);
         }
     }
 
     async function questionRemove(id) {
         if (!await alertConfirm('are you sure want to delete this question?')) return;
 
-        const response = await questionDelete(id);
-        const responseBody = await response.json();
-
-        if (responseBody.status === 200) {
+        try {
+            await questionDelete(id);
             await alertSuccess();
             await questionList();
-        } else {
-            await alertError(responseBody.message);
+        } catch (err) {
+            await alertError(err.message);
         }
     }
 
     onMount(async () => {
         await questionList();
-    })
+    });
 </script>
 
 <section class="p-6 flex-1">
