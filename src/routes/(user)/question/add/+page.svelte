@@ -1,58 +1,110 @@
 <script>
     import QuestionModel from "$lib/models/QuestionModel.js";
+    import QuestionOptionModel from "$lib/models/QuestionOptionModel.js";
     import {questionPost} from "$lib/api/QuestionApi.js";
     import {alertError, alertSuccess} from "$lib/alert.js";
     import {goto} from "$app/navigation";
+    import {getQuestionTypes, getQuestionTypeDisplayName} from "$lib/enums/question-types.js";
+    import {getAnswerPolicy, getAnswerPolicyDisplayName} from "$lib/enums/answer-policy.js";
+    import {getLabel} from "$lib/enums/label.js";
+    import {getBooleanEnum, getBooleanEnumDisplayName} from "$lib/enums/boolean.js";
+    import {questionOptionListPost} from "$lib/api/QuestionOptionApi.js";
 
     let question = $state({...new QuestionModel()});
+    let questionOptions = $state([{...new QuestionOptionModel()}]);
 
-    async function questionAdd(e) {
-        e.preventDefault();
+    const types = getQuestionTypes();
+    const policies = getAnswerPolicy();
+    const labels = getLabel();
+    const booleans = getBooleanEnum();
 
+    async function questionAdd() {
         const response = await questionPost(question);
         const responseBody = await response.json();
 
         if (responseBody.status === 200) {
-            await alertSuccess();
-            await goto('/question');
+            // questionOptions.forEach(({questionId}) => {
+            //     questionId = responseBody.data.id;
+            // });
+            await alertSuccess("save question success");
         } else {
             await alertError(responseBody.message);
         }
+    }
+
+    async function questionOptionAdd() {
+        const response = await questionOptionListPost(questionOptions);
+        const responseBody = await response.json();
+        console.log(responseBody);
+
+        if (responseBody.status === 200) {
+            await alertSuccess("save question option success");
+            await goto("/question");
+        } else {
+            await alertError(responseBody.message);
+        }
+    }
+
+    function addOption(e) {
+        e.preventDefault();
+
+        questionOptions = [
+            ...questionOptions,
+            {...new QuestionOptionModel()}
+        ];
+    }
+
+    function removeLastOption() {
+        if (questionOptions.length > 1) { // misalnya jangan hapus kalau tinggal 1
+            questionOptions = questionOptions.slice(0, -1);
+        }
+    }
+
+    async function questionForm(event) {
+        event.preventDefault();
+        await questionAdd();
+        await questionOptionAdd();
     }
 </script>
 
 <section class="p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
     <h2 class="text-2xl font-bold mb-6 text-gray-900 dark:text-white">Question Add</h2>
 
-    <form onsubmit={questionAdd}>
+    <form onsubmit={questionForm}>
         <div class="mb-5">
             <label for="qtype" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Type</label>
-<!--            <input-->
-<!--                    id="qtype"-->
-<!--                    type="text"-->
-<!--                    bind:value={question.qtype}-->
-<!--                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"-->
-<!--            />-->
             <select
                     id="qtype"
                     bind:value={question.qtype}
                     class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                     required
             >
-                <option value="" disabled>Select Option</option>
-                <option value="ESSAY">ESSAY</option>
-                <option value="MCO">MCO</option>
+                <option value="" disabled>select type</option>
+                {#each types as type}
+                    <option value={type}>
+                        {getQuestionTypeDisplayName(type)}
+                    </option>
+                {/each}
             </select>
         </div>
-        <div class="mb-5">
-            <label for="answer-policy" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Answer Policy</label>
-            <input
-                    id="answer-policy"
-                    type="text"
-                    bind:value={question.questionAnswerPolicy}
-                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-            />
-        </div>
+        {#if question.qtype === types[0]}
+            <div class="mb-5">
+                <label for="answer-policy" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Answer Policy</label>
+                <select
+                        id="answer-policy"
+                        bind:value={question.questionAnswerPolicy}
+                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        required
+                >
+                    <option value="" disabled>select policy</option>
+                    {#each policies as policy}
+                        <option value={policy}>
+                            {getAnswerPolicyDisplayName(policy)}
+                        </option>
+                    {/each}
+                </select>
+            </div>
+        {/if}
         <div class="mb-5">
             <label for="stem" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Stem</label>
             <input
@@ -81,5 +133,78 @@
                 Back
             </a>
         </div>
+        {#if question.qtype === types[0]}
+            {#each questionOptions as questionOptions, i}
+                <div class="w-full p-4 bg-white border border-gray-200 rounded-lg shadow-sm sm:p-8 dark:bg-gray-800 dark:border-gray-700 mt-5">
+                    <h5 class="text-2xl font-bold mb-6 text-gray-900 dark:text-white">MCO {questionOptions.label || i + 1}</h5>
+                    <div class="mb-5">
+                        <input type="hidden" bind:value={questionOptions.questionId} name={question.id} id="questionId-{i}" />
+                        <label for="label-{i}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Label</label>
+                        <select
+                                id="label-{i}"
+                                bind:value={questionOptions.label}
+                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                required
+                        >
+                            <option value="" disabled>select label</option>
+                            {#each labels as label}
+                                <option value={label}>
+                                    {label}
+                                </option>
+                            {/each}
+                        </select>
+                    </div>
+                    <div class="mb-5">
+                        <label for="content-{i}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Content</label>
+                        <input
+                                id="content-{i}"
+                                type="text"
+                                bind:value={questionOptions.content}
+                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        />
+                    </div>
+                    <div class="mb-5">
+                        <label for="correct-{i}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Correct</label>
+                        <select
+                                id="correct-{i}"
+                                bind:value={questionOptions.correct}
+                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        >
+                            <option value="" disabled>select correct</option>
+                            {#each booleans as boolean}
+                                <option value={boolean}>
+                                    {getBooleanEnumDisplayName(boolean)}
+                                </option>
+                            {/each}
+                        </select>
+                    </div>
+                    <div class="mb-5">
+                        <label for="orderIndex-{i}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Order Index</label>
+                        <input
+                                id="orderIndex-{i}"
+                                type="number"
+                                bind:value={questionOptions.orderIndex}
+                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        />
+                    </div>
+                </div>
+            {/each}
+            <div class="flex gap-3 mt-4 justify-end">
+                <button
+                        onclick={addOption}
+                        type="button"
+                        class="mt-5 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                    + Add Option
+                </button>
+                <button
+                        onclick={removeLastOption}
+                        type="button"
+                        class="mt-5 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                >
+                    – Remove Option
+                </button>
+            </div>
+        {/if}
     </form>
 </section>
